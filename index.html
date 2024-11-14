@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JSON</title>
+    <style>
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+
+        #feedback {
+            margin-top: 20px;
+        }
+
+        .progress {
+            width: 100%;
+            background-color: #f0f0f0;
+            padding: 3px;
+            border-radius: 3px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, .2);
+        }
+
+        .progress-bar {
+            display: block;
+            height: 22px;
+            background-color: #659cef;
+            border-radius: 3px;
+            transition: width 500ms ease-in-out;
+        }
+    </style>
+</head>
+<body>
+<h2>JSON File Upload</h2>
+
+<form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" name="jsonFile" id="jsonFile" accept=".json">
+    <button type="submit">Upload and Parse</button>
+</form>
+
+<div class="progress" style="display:none;">
+    <span class="progress-bar" style="width: 0%"></span>
+</div>
+
+<div id="feedback"></div>
+
+<script>
+  document.getElementById('uploadForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const file = document.getElementById('jsonFile').files[0];
+    if (!file) {
+      showFeedback('Please select a file', 'error');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('jsonFile', file);
+
+    const progress = document.querySelector('.progress');
+    const progressBar = document.querySelector('.progress-bar');
+    progress.style.display = 'block';
+
+    fetch('parser.php', {
+      method: 'POST',
+      body: formData
+    })
+        .then(response => {
+          if (response.ok) {
+            return response.json();
+          } else {
+            return response.text().then(data => ({message: data, success: false}));
+          }
+        })
+        .then(data => {
+          if (data.success) {
+            showFeedback(data.message, 'success');
+          } else {
+            showFeedback(data.message, 'error');
+          }
+          progress.style.display = 'none';
+        })
+        .catch(error => {
+          showFeedback('Error uploading file: ' + error, 'error');
+          progress.style.display = 'none';
+        });
+  });
+
+  function showFeedback(message, type) {
+    const feedback = document.getElementById('feedback');
+    feedback.innerHTML = message;
+    feedback.className = type;
+  }
+</script>
+</body>
+</html>
